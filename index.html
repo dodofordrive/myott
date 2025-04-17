@@ -1,0 +1,783 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>My OTT Platform</title>
+  <link rel="icon" href="data:;base64,iVBORw0KGgo="> <!-- Suppress favicon.ico 404 -->
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background-color: #000;
+      color: #fff;
+      margin: 0;
+      padding: 0;
+    }
+    header {
+      background-color: #111;
+      padding: 30px;
+      text-align: center;
+      font-size: 2.5em;
+      font-weight: bold;
+      letter-spacing: 1px;
+      box-shadow: 0 2px 10px rgba(0, 0, 0, 0.8);
+    }
+    .auth-button {
+      display: block;
+      margin: 20px auto;
+      padding: 10px 20px;
+      background-color: #4285f4;
+      color: white;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+      font-size: 16px;
+    }
+    .auth-button:hover {
+      background-color: #357abd;
+    }
+    .loading {
+      text-align: center;
+      padding: 20px;
+      color: #ccc;
+      display: none;
+    }
+    .hero-section {
+      position: relative;
+      width: 100%;
+      height: 500px;
+      overflow: hidden;
+    }
+    .hero-slide {
+      width: 100%;
+      height: 100%;
+      position: absolute;
+      top: 0;
+      left: 0;
+      opacity: 0;
+      transition: opacity 0.5s ease-in-out;
+      background-size: cover;
+      background-position: center;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-direction: column;
+      text-align: center;
+      color: #fff;
+    }
+    .hero-slide.active {
+      opacity: 1;
+    }
+    .hero-slide h2 {
+      font-size: 2.5em;
+      margin: 0;
+    }
+    .hero-slide p {
+      font-size: 1.2em;
+      margin: 10px 0;
+    }
+    .watch-now {
+      padding: 10px 20px;
+      background: linear-gradient(90deg, #1e90ff, #ff69b4);
+      color: white;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+      font-size: 1.1em;
+    }
+    .watch-now:hover {
+      background: linear-gradient(90deg, #1e90ff, #ff4500);
+    }
+    .carousel {
+      padding: 40px 60px;
+      position: relative;
+    }
+    .carousel-title {
+      font-size: 2em;
+      margin-bottom: 20px;
+      border-left: 5px solid red;
+      padding-left: 15px;
+    }
+    .carousel-container {
+      display: flex;
+      overflow: hidden;
+      scroll-behavior: smooth;
+    }
+    .carousel-item {
+      min-width: 200px;
+      height: 300px;
+      background-size: cover;
+      background-position: center;
+      margin-right: 20px;
+      border-radius: 10px;
+      cursor: pointer;
+      position: relative;
+      overflow: hidden;
+    }
+    .carousel-item img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+    .carousel-item .overlay {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0, 0, 0, 0.5);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      opacity: 0;
+      transition: opacity 0.3s;
+    }
+    .carousel-item:hover .overlay {
+      opacity: 1;
+    }
+    .carousel-item .overlay span {
+      color: #fff;
+      font-size: 1.1em;
+    }
+    .carousel-buttons {
+      position: absolute;
+      top: 50%;
+      width: 100%;
+      display: flex;
+      justify-content: space-between;
+      transform: translateY(-50%);
+    }
+    .carousel-buttons button {
+      background: rgba(0, 0, 0, 0.5);
+      color: #fff;
+      border: none;
+      padding: 10px;
+      cursor: pointer;
+      font-size: 1.5em;
+    }
+    .carousel-buttons button:hover {
+      background: rgba(0, 0, 0, 0.8);
+    }
+    .playlist-section {
+      padding: 40px 60px;
+    }
+    .playlist-title {
+      font-size: 2em;
+      margin-bottom: 20px;
+      border-left: 5px solid red;
+      padding-left: 15px;
+    }
+    .videos-container {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+      gap: 25px;
+    }
+    .video-card {
+      background-color: #1f1f1f;
+      border-radius: 10px;
+      overflow: hidden;
+      box-shadow: 0 0 15px rgba(0, 0, 0, 0.7);
+      transition: transform 0.3s ease;
+      cursor: pointer;
+    }
+    .video-card:hover {
+      transform: scale(1.05);
+    }
+    .video-card img {
+      width: 100%;
+      height: 200px;
+      object-fit: cover;
+    }
+    .video-title {
+      padding: 15px;
+      font-size: 1.1em;
+      font-weight: bold;
+      color: #ccc;
+    }
+    .modal {
+      display: none;
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background-color: rgba(0, 0, 0, 0.9);
+      z-index: 1000;
+      justify-content: center;
+      align-items: center;
+    }
+    .details-modal {
+      display: none;
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0, 0, 0, 0.9);
+      z-index: 1001;
+      justify-content: center;
+      align-items: center;
+    }
+    .details-modal-content {
+      position: relative;
+      width: 100%;
+      height: 100%;
+      background: #000;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 20px;
+      box-sizing: border-box;
+      text-align: center;
+    }
+    .details-modal .close {
+      position: absolute;
+      top: 20px;
+      right: 20px;
+      font-size: 24px;
+      color: #fff;
+      cursor: pointer;
+    }
+    .details-modal .thumbnail {
+      width: 100%;
+      height: 60%;
+      object-fit: cover;
+      margin-bottom: 20px;
+    }
+    .details-modal h2 {
+      font-size: 2em;
+      margin: 0 0 10px;
+    }
+    .details-modal p {
+      font-size: 1.1em;
+      margin: 5px 0;
+    }
+    .details-modal .genres {
+      font-size: 0.9em;
+      color: #bbb;
+    }
+    .details-modal .languages {
+      font-size: 0.9em;
+      color: #bbb;
+    }
+    .watch-now-modal {
+      padding: 10px 20px;
+      background: linear-gradient(90deg, #1e90ff, #ff69b4);
+      color: white;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+      font-size: 1.1em;
+      margin-top: 20px;
+    }
+    .watch-now-modal:hover {
+      background: linear-gradient(90deg, #1e90ff, #ff4500);
+    }
+    .video-modal {
+      display: none;
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: #000;
+      z-index: 1002;
+      justify-content: center;
+      align-items: center;
+    }
+    .video-modal-content {
+      position: relative;
+      width: 100%;
+      height: 100%;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 20px;
+      box-sizing: border-box;
+    }
+    .video-modal .close {
+      position: absolute;
+      top: 20px;
+      right: 20px;
+      font-size: 24px;
+      color: #fff;
+      cursor: pointer;
+      background: rgba(0, 0, 0, 0.5);
+      padding: 10px;
+      border-radius: 5px;
+    }
+    .video-modal .back {
+      position: absolute;
+      top: 20px;
+      left: 20px;
+      font-size: 24px;
+      color: #fff;
+      cursor: pointer;
+      background: rgba(0, 0, 0, 0.5);
+      padding: 10px;
+      border-radius: 5px;
+    }
+    .video-modal .video-player {
+      width: 80%;
+      height: 80%;
+      max-width: 1280px;
+    }
+    .thumbnail {
+      width: 100%;
+      height: auto;
+      margin-bottom: 20px;
+      cursor: pointer;
+    }
+    .description {
+      color: #ccc;
+      margin-bottom: 20px;
+      line-height: 1.5;
+    }
+    .play-button, .restricted-message {
+      background-color: red;
+      color: white;
+      padding: 10px 20px;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+      font-size: 16px;
+      display: block;
+      margin: 0 auto;
+    }
+    .play-button:hover {
+      background-color: darkred;
+    }
+    .restricted-message {
+      background-color: #444;
+      cursor: default;
+    }
+    .restricted-message:hover {
+      background-color: #444;
+    }
+
+    @media (max-width: 768px) {
+      .hero-section {
+        height: 300px;
+      }
+      .hero-slide h2 {
+        font-size: 1.5em;
+      }
+      .hero-slide p {
+        font-size: 1em;
+      }
+      .carousel-item {
+        min-width: 150px;
+        height: 225px;
+      }
+      .playlist-section {
+        padding: 20px;
+      }
+      .playlist-title {
+        font-size: 1.5em;
+      }
+      .details-modal .thumbnail {
+        height: 50%;
+      }
+      .details-modal h2 {
+        font-size: 1.5em;
+      }
+      .details-modal p {
+        font-size: 0.9em;
+      }
+      .video-modal .video-player {
+        width: 90%;
+        height: 70%;
+      }
+    }
+  </style>
+</head>
+<body>
+  <header>My OTT Platform</header>
+  <button id="authButton" class="auth-button">Sign in with Google</button>
+  <div id="loading" class="loading">Loading videos...</div>
+  <div id="hero-section" class="hero-section"></div>
+  <div id="carousel" class="carousel">
+    <div class="carousel-title">Latest Releases</div>
+    <div class="carousel-container" id="carousel-container"></div>
+    <div class="carousel-buttons">
+      <button id="prevBtn"><</button>
+      <button id="nextBtn">></button>
+    </div>
+  </div>
+  <div id="content"></div>
+
+  <div id="videoModal" class="video-modal">
+    <div class="video-modal-content">
+      <span class="close">×</span>
+      <span class="back">← Back</span>
+      <div id="videoPlayer" class="video-player"></div>
+    </div>
+  </div>
+
+  <div id="detailsModal" class="details-modal">
+    <div class="details-modal-content">
+      <span class="close">×</span>
+      <img id="detailsThumbnail" class="thumbnail" src="" alt="Video Thumbnail">
+      <h2 id="detailsTitle"></h2>
+      <p id="detailsDescription"></p>
+      <div class="genres" id="detailsGenres"></div>
+      <div class="languages" id="detailsLanguages"></div>
+      <button id="watchNowButton" class="watch-now-modal" style="display:none;">Watch Now</button>
+    </div>
+  </div>
+
+  <script src="https://accounts.google.com/gsi/client" async defer></script>
+  <script src="https://www.youtube.com/iframe_api"></script>
+  <script>
+    let authToken = localStorage.getItem('authToken') || null;
+    let player; // For YouTube IFrame API
+    const clientId = '673033131613-j6ogdsie3dk0avasalrn4l4fau1lf1u6.apps.googleusercontent.com';
+    const clientSecret = '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';
+    const apiKey = 'AIzaSyAEAJf7QQGeo5brFq8yo9Ckiuds90WWrxc';
+    const channelId = 'UC6OjVQRV7d2t1U4aJLvy7DA';
+    const redirectUri = window.location.hostname === '127.0.0.1' || window.location.hostname === 'localhost' 
+    ? 'http://127.0.0.1:5500' 
+    : 'https://taupe-tartufo-c7037e.netlify.app';
+    const maxResults = 100;
+    const defaultThumbnail = 'https://via.placeholder.com/320x180?text=No+Thumbnail';
+
+    function handleAuthClick() {
+      const loading = document.getElementById('loading');
+      const authButton = document.getElementById('authButton');
+      loading.style.display = 'block';
+      authButton.style.display = 'none';
+
+      google.accounts.oauth2.initCodeClient({
+        client_id: clientId,
+        scope: 'https://www.googleapis.com/auth/youtube',
+        redirect_uri: redirectUri,
+        callback: async (response) => {
+          console.log('OAuth callback:', response);
+          if (response.code) {
+            await exchangeCodeForToken(response.code);
+          } else {
+            console.error('No authorization code received:', response);
+            alert('Authentication failed: No code received. Ensure third-party cookies are enabled or use HTTPS.');
+            loading.style.display = 'none';
+            authButton.style.display = 'block';
+          }
+        }
+      }).requestCode();
+    }
+
+    async function exchangeCodeForToken(code) {
+      try {
+        const response = await fetch('https://oauth2.googleapis.com/token', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+          body: new URLSearchParams({
+            code, client_id: clientId, client_secret: clientSecret, redirect_uri: redirectUri, grant_type: 'authorization_code'
+          }),
+        });
+
+        if (!response.ok) {
+          const errorData = await response.json();
+          throw new Error(`Token exchange failed: ${errorData.error} - ${errorData.error_description}`);
+        }
+
+        const data = await response.json();
+        authToken = data.access_token;
+        localStorage.setItem('authToken', authToken);
+        await displayContent();
+        initializeHeroSlides();
+        initializeCarousel();
+      } catch (error) {
+        console.error('Token exchange error:', error);
+        alert(`Authentication failed: ${error.message}. Check the console.`);
+        document.getElementById('loading').style.display = 'none';
+        document.getElementById('authButton').style.display = 'block';
+      }
+    }
+
+    async function fetchPlaylists() {
+      const response = await fetch(
+        `https://www.googleapis.com/youtube/v3/playlists?part=snippet&channelId=${channelId}&maxResults=50&key=${apiKey}&access_token=${authToken}`
+      );
+      const data = await response.json();
+      console.log('Playlists response:', data);
+      return data.items || [];
+    }
+
+    async function fetchVideos(playlistId) {
+      let allVideos = [];
+      let nextPageToken = null;
+
+      try {
+        do {
+          const response = await fetch(
+            `https://www.googleapis.com/youtube/v3/playlistItems?part=snippet,status,contentDetails&playlistId=${playlistId}&maxResults=50&key=${apiKey}&access_token=${authToken}&pageToken=${nextPageToken || ''}`
+          );
+          const data = await response.json();
+          console.log('Videos response:', data);
+          if (!data.items || data.error) throw new Error('Invalid video data or API error: ' + (data.error ? data.error.message : 'No items'));
+          allVideos = allVideos.concat(data.items.map(item => ({
+            ...item,
+            isRestricted: item.status?.privacyStatus === 'private' && !authToken,
+            thumbnailUrl: (item.snippet.thumbnails.maxres?.url || item.snippet.thumbnails.high?.url || item.snippet.thumbnails.standard?.url || item.snippet.thumbnails.medium?.url) || defaultThumbnail,
+            contentDetails: item.contentDetails || {},
+          })));
+          nextPageToken = data.nextPageToken;
+        } while (nextPageToken);
+
+        return allVideos.sort((a, b) => new Date(b.snippet.publishedAt) - new Date(a.snippet.publishedAt)); // Sort by published date
+      } catch (error) {
+        console.error('Error fetching videos:', error);
+        return [];
+      }
+    }
+
+    function onYouTubeIframeAPIReady() {
+      player = new YT.Player('videoPlayer', {
+        height: '100%',
+        width: '100%',
+        events: { 'onReady': onPlayerReady, 'onError': onPlayerError }
+      });
+    }
+
+    function onPlayerReady(event) { console.log('Player ready:', event); }
+    function onPlayerError(event) {
+      console.error('Player error:', event.data);
+      document.getElementById('restrictedMessage').style.display = 'block';
+      if (player) player.stopVideo();
+    }
+
+    function initializePlayer() {
+      if (!player || player.getIframe() === null) {
+        player = new YT.Player('videoPlayer', {
+          height: '100%',
+          width: '100%',
+          events: { 'onReady': onPlayerReady, 'onError': onPlayerError }
+        });
+        console.log('Player reinitialized');
+      }
+    }
+
+    function showDetailsModal(videoId, thumbnailUrl, title, description, isRestricted) {
+      const detailsModal = document.getElementById('detailsModal');
+      const detailsThumbnail = document.getElementById('detailsThumbnail');
+      const detailsTitle = document.getElementById('detailsTitle');
+      const detailsDescription = document.getElementById('detailsDescription');
+      const detailsGenres = document.getElementById('detailsGenres');
+      const detailsLanguages = document.getElementById('detailsLanguages');
+      const watchNowButton = document.getElementById('watchNowButton');
+
+      detailsThumbnail.src = thumbnailUrl;
+      detailsTitle.textContent = title || 'Untitled';
+      detailsDescription.textContent = description || 'No description available';
+      detailsGenres.textContent = 'Comedy | Drama | Romance'; // Placeholder
+      detailsLanguages.textContent = 'Malayalam | Hindi | Tamil | Telugu | Kannada'; // Placeholder
+      watchNowButton.style.display = 'block';
+
+      initializePlayer();
+
+      if (isRestricted || !player) {
+        watchNowButton.style.display = 'none';
+      } else {
+        watchNowButton.onclick = () => {
+          if (!player) {
+            console.error('Player not initialized');
+            return;
+          }
+          document.getElementById('videoModal').style.display = 'flex';
+          player.loadVideoById(videoId);
+          document.getElementById('videoPlayer').style.display = 'block';
+          player.playVideo();
+        };
+      }
+
+      detailsModal.style.display = 'flex';
+
+      document.querySelector('#detailsModal .close').onclick = () => {
+        detailsModal.style.display = 'none';
+      };
+
+      window.onclick = (event) => {
+        if (event.target === detailsModal) {
+          detailsModal.style.display = 'none';
+        }
+      };
+    }
+
+    async function displayContent() {
+      const contentDiv = document.getElementById('content');
+      const loading = document.getElementById('loading');
+      contentDiv.innerHTML = '';
+      loading.style.display = 'block';
+
+      const playlists = await fetchPlaylists();
+      const playlist = playlists[5]; // Take only the sixth playlist
+
+      if (playlist) {
+        const section = document.createElement('div');
+        section.className = 'playlist-section';
+
+        const title = document.createElement('div');
+        title.className = 'playlist-title';
+        title.textContent = playlist.snippet.title;
+        section.appendChild(title);
+
+        const videosContainer = document.createElement('div');
+        videosContainer.className = 'videos-container';
+
+        const videos = await fetchVideos(playlist.id);
+        for (const video of videos) {
+          const videoCard = document.createElement('div');
+          videoCard.className = 'video-card';
+          videoCard.onclick = () => showDetailsModal(
+            video.snippet.resourceId.videoId,
+            video.thumbnailUrl,
+            video.snippet.title,
+            video.snippet.description,
+            video.isRestricted
+          );
+
+          const thumbnail = document.createElement('img');
+          thumbnail.src = video.thumbnailUrl;
+          thumbnail.alt = video.snippet.title;
+          videoCard.appendChild(thumbnail);
+
+          const videoTitle = document.createElement('div');
+          videoTitle.className = 'video-title';
+          videoTitle.textContent = video.snippet.title;
+          videoCard.appendChild(videoTitle);
+
+          videosContainer.appendChild(videoCard);
+        }
+
+        section.appendChild(videosContainer);
+        contentDiv.appendChild(section);
+      }
+
+      loading.style.display = 'none';
+    }
+
+    function initialize() {
+      const authButton = document.getElementById('authButton');
+      const loading = document.getElementById('loading');
+      const videoModal = document.getElementById('videoModal');
+      const videoClose = videoModal.querySelector('.close');
+      const videoBack = videoModal.querySelector('.back');
+
+      if (authToken) {
+        loading.style.display = 'block';
+        fetch(`https://www.googleapis.com/youtube/v3/playlists?part=snippet&channelId=${channelId}&maxResults=1&key=${apiKey}&access_token=${authToken}`)
+          .then(response => {
+            if (!response.ok) throw new Error('Token invalid');
+            return response.json();
+          })
+          .then(() => {
+            displayContent();
+            initializeHeroSlides();
+            initializeCarousel();
+          })
+          .catch(() => {
+            localStorage.removeItem('authToken');
+            authToken = null;
+            authButton.style.display = 'block';
+            loading.style.display = 'none';
+          });
+      } else {
+        authButton.style.display = 'block';
+      }
+
+      authButton.addEventListener('click', handleAuthClick);
+
+      // Add event listeners for video modal buttons
+      videoClose.onclick = () => {
+        videoModal.style.display = 'none';
+        if (player) {
+          player.stopVideo();
+          player.clearVideo();
+        }
+      };
+
+      videoBack.onclick = () => {
+        videoModal.style.display = 'none';
+        // Optionally stop video on back if desired
+        // if (player) player.stopVideo();
+      };
+    }
+
+    async function initializeHeroSlides() {
+      const heroSection = document.getElementById('hero-section');
+      let slideIndex = 0;
+
+      const playlists = await fetchPlaylists();
+      const playlist = playlists[5]; // Use the sixth playlist
+      if (!playlist) return;
+
+      const videos = await fetchVideos(playlist.id);
+      const latestVideos = videos.slice(0, 4); // Take the latest 4 videos
+
+      latestVideos.forEach((video, index) => {
+        const slideDiv = document.createElement('div');
+        slideDiv.className = 'hero-slide';
+        slideDiv.style.backgroundImage = `url(${video.thumbnailUrl})`;
+        slideDiv.innerHTML = `
+          <h2>${video.snippet.title}</h2>
+          <p>${video.snippet.description || 'Latest Highlight'}</p>
+          <button class="watch-now" onclick="showDetailsModal('${video.snippet.resourceId.videoId}', '${video.thumbnailUrl}', '${video.snippet.title}', '${video.snippet.description || ''}', ${video.isRestricted})">Watch Now</button>
+        `;
+        if (index === 0) slideDiv.classList.add('active');
+        heroSection.appendChild(slideDiv);
+      });
+
+      setInterval(() => {
+        const slides = document.querySelectorAll('.hero-slide');
+        slides.forEach(slide => slide.classList.remove('active'));
+        const nextIndex = (slides[slideIndex] ? slideIndex + 1 : 0) % slides.length;
+        slides[nextIndex].classList.add('active');
+        slideIndex = nextIndex;
+      }, 5000); // Change slide every 5 seconds
+    }
+
+    async function initializeCarousel() {
+      const carouselContainer = document.getElementById('carousel-container');
+      const playlists = await fetchPlaylists();
+      const playlist = playlists[5]; // Use the sixth playlist
+      if (!playlist) return;
+
+      const videos = await fetchVideos(playlist.id);
+      carouselContainer.innerHTML = ''; // Clear existing items
+
+      videos.forEach(video => {
+        const item = document.createElement('div');
+        item.className = 'carousel-item';
+        item.style.backgroundImage = `url(${video.thumbnailUrl})`;
+        item.innerHTML = `<div class="overlay"><span>${video.snippet.title}</span></div>`;
+        item.onclick = () => showDetailsModal(video.snippet.resourceId.videoId, video.thumbnailUrl, video.snippet.title, video.snippet.description, video.isRestricted);
+        carouselContainer.appendChild(item);
+      });
+
+      const prevBtn = document.getElementById('prevBtn');
+      const nextBtn = document.getElementById('nextBtn');
+      let scrollPosition = 0;
+      let slideIndex = 0; // For hero slide tracking
+      const scrollAmount = 220; // Adjust based on item width + margin
+
+      nextBtn.addEventListener('click', () => {
+        const container = document.getElementById('carousel-container');
+        if (scrollPosition < (container.scrollWidth - container.clientWidth)) {
+          scrollPosition += scrollAmount;
+          container.scrollTo({ left: scrollPosition, behavior: 'smooth' });
+        }
+      });
+
+      prevBtn.addEventListener('click', () => {
+        if (scrollPosition > 0) {
+          scrollPosition -= scrollAmount;
+          document.getElementById('carousel-container').scrollTo({ left: scrollPosition, behavior: 'smooth' });
+        }
+      });
+    }
+
+    // Initialize the application
+    initialize();
+  </script>
+</body>
+</html>

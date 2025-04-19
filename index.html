@@ -429,6 +429,61 @@
   <script src="https://accounts.google.com/gsi/client" async defer></script>
   <script src="https://www.youtube.com/iframe_api"></script>
   <script>
+    /*
+     * SECURITY WARNING: The following credentials are exposed in client-side code, which is a MAJOR security risk.
+     * Anyone can view these in the browser's DevTools or source code on public deployments (Netlify, GitHub Pages).
+     * Recommendations:
+     * 1. Move `clientSecret` to a serverless function (e.g., Netlify Functions).
+     * 2. Store `clientId`, `clientSecret`, and `apiKey` in environment variables.
+     * 3. Use a backend for token exchange to avoid exposing `clientSecret`.
+     * Example for Netlify Functions:
+     * - Create `/functions/exchange-token.js` to handle token exchange.
+     * - Store credentials in Netlify environment variables (Site Settings > Environment Variables).
+     * - Call the function from `exchangeCodeForToken` instead of using `clientSecret` client-side.
+     * Example serverless function:
+     * ```
+     * const fetch = require('node-fetch');
+     * exports.handler = async (event) => {
+     *   const { code } = JSON.parse(event.body);
+     *   const clientId = process.env.CLIENT_ID;
+     *   const clientSecret = process.env.CLIENT_SECRET;
+     *   const redirectUri = process.env.REDIRECT_URI;
+     *   try {
+     *     const response = await fetch('https://oauth2.googleapis.com/token', {
+     *       method: 'POST',
+     *       headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+     *       body: new URLSearchParams({
+     *         code,
+     *         client_id: clientId,
+     *         client_secret: clientSecret,
+     *         redirect_uri: redirectUri,
+     *         grant_type: 'authorization_code',
+     *       }),
+     *     });
+     *     const data = await response.json();
+     *     return { statusCode: response.ok ? 200 : 500, body: JSON.stringify(data) };
+     *   } catch (error) {
+     *     return { statusCode: 500, body: JSON.stringify({ error: error.message }) };
+     *   }
+     * };
+     * ```
+     * Update `exchangeCodeForToken` to call the function:
+     * ```
+     * async function exchangeCodeForToken(code) {
+     *   const response = await fetch('/.netlify/functions/exchange-token', {
+     *     method: 'POST',
+     *     body: JSON.stringify({ code }),
+     *   });
+     *   const data = await response.json();
+     *   authToken = data.access_token;
+     *   localStorage.setItem('authToken', authToken);
+     *   await displayContent();
+     *   initializeHeroSlides();
+     *   initializeCarousel();
+     * }
+     * ```
+     */
+
     let authToken = localStorage.getItem('authToken') || null;
     let player; // For YouTube IFrame API
     const clientId = '673033131613-j6ogdsie3dk0avasalrn4l4fau1lf1u6.apps.googleusercontent.com';
@@ -436,15 +491,17 @@
     const apiKey = 'AIzaSyAEAJf7QQGeo5brFq8yo9Ckiuds90WWrxc';
     const channelId = 'UC6OjVQRV7d2t1U4aJLvy7DA';
     const redirectUri = (() => {
-    const hostname = window.location.hostname;
-    if (hostname === '127.0.0.1' || hostname === 'localhost') {
-      return 'http://127.0.0.1:5500';
-  } else if (hostname === 'dodofordrive.github.io') {
-      return 'https://dodofordrive.github.io/myott/';
-  } else {
-      return 'https://taupe-tartufo-c7037e.netlify.app';
-  }
-})();
+      const hostname = window.location.hostname;
+      console.log('Hostname:', hostname); // Debug: Log hostname
+      if (hostname === '127.0.0.1' || hostname === 'localhost') {
+        return 'http://127.0.0.1:5500';
+      } else if (hostname === 'dodofordrive.github.io') {
+        return 'https://dodofordrive.github.io/myott/';
+      } else {
+        return 'https://taupe-tartufo-c7037e.netlify.app';
+      }
+    })();
+    console.log('Selected Redirect URI:', redirectUri); // Debug: Log selected URI
     const maxResults = 100;
     const defaultThumbnail = 'https://via.placeholder.com/320x180?text=No+Thumbnail';
 
@@ -459,7 +516,7 @@
         scope: 'https://www.googleapis.com/auth/youtube',
         redirect_uri: redirectUri,
         callback: async (response) => {
-          console.log('OAuth callback:', response);
+          console.log('OAuth Callback Response:', response); // Debug: Log OAuth response
           if (response.code) {
             await exchangeCodeForToken(response.code);
           } else {
@@ -468,7 +525,7 @@
             loading.style.display = 'none';
             authButton.style.display = 'block';
           }
-        }
+        },
       }).requestCode();
     }
 
@@ -478,7 +535,11 @@
           method: 'POST',
           headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
           body: new URLSearchParams({
-            code, client_id: clientId, client_secret: clientSecret, redirect_uri: redirectUri, grant_type: 'authorization_code'
+            code,
+            client_id: clientId,
+            client_secret: clientSecret,
+            redirect_uri: redirectUri,
+            grant_type: 'authorization_code',
           }),
         });
 
@@ -490,6 +551,7 @@
         const data = await response.json();
         authToken = data.access_token;
         localStorage.setItem('authToken', authToken);
+        console.log('Access Token:', authToken); // Debug: Log access token
         await displayContent();
         initializeHeroSlides();
         initializeCarousel();
@@ -506,7 +568,7 @@
         `https://www.googleapis.com/youtube/v3/playlists?part=snippet&channelId=${channelId}&maxResults=50&key=${apiKey}&access_token=${authToken}`
       );
       const data = await response.json();
-      console.log('Playlists response:', data);
+      console.log('Playlists response:', data); // Debug: Log playlists
       return data.items || [];
     }
 
@@ -520,14 +582,17 @@
             `https://www.googleapis.com/youtube/v3/playlistItems?part=snippet,status,contentDetails&playlistId=${playlistId}&maxResults=50&key=${apiKey}&access_token=${authToken}&pageToken=${nextPageToken || ''}`
           );
           const data = await response.json();
-          console.log('Videos response:', data);
+          console.log('Videos response:', data); // Debug: Log videos
           if (!data.items || data.error) throw new Error('Invalid video data or API error: ' + (data.error ? data.error.message : 'No items'));
-          allVideos = allVideos.concat(data.items.map(item => ({
-            ...item,
-            isRestricted: item.status?.privacyStatus === 'private' && !authToken,
-            thumbnailUrl: (item.snippet.thumbnails.maxres?.url || item.snippet.thumbnails.high?.url || item.snippet.thumbnails.standard?.url || item.snippet.thumbnails.medium?.url) || defaultThumbnail,
-            contentDetails: item.contentDetails || {},
-          })));
+          allVideos = allVideos.concat(data.items.map(item => {
+            console.log('Video:', item.snippet.title, 'Privacy:', item.status?.privacyStatus); // Debug: Log video privacy
+            return {
+              ...item,
+              isRestricted: item.status?.privacyStatus === 'private' && !authToken,
+              thumbnailUrl: (item.snippet.thumbnails.maxres?.url || item.snippet.thumbnails.high?.url || item.snippet.thumbnails.standard?.url || item.snippet.thumbnails.medium?.url) || defaultThumbnail,
+              contentDetails: item.contentDetails || {},
+            };
+          }));
           nextPageToken = data.nextPageToken;
         } while (nextPageToken);
 
@@ -542,13 +607,16 @@
       player = new YT.Player('videoPlayer', {
         height: '100%',
         width: '100%',
-        events: { 'onReady': onPlayerReady, 'onError': onPlayerError }
+        events: { 'onReady': onPlayerReady, 'onError': onPlayerError },
       });
     }
 
-    function onPlayerReady(event) { console.log('Player ready:', event); }
+    function onPlayerReady(event) {
+      console.log('Player ready:', event); // Debug: Log player ready
+    }
+
     function onPlayerError(event) {
-      console.error('Player error:', event.data);
+      console.error('Player error:', event.data); // Debug: Log player error
       document.getElementById('restrictedMessage').style.display = 'block';
       if (player) player.stopVideo();
     }
@@ -558,7 +626,7 @@
         player = new YT.Player('videoPlayer', {
           height: '100%',
           width: '100%',
-          events: { 'onReady': onPlayerReady, 'onError': onPlayerError }
+          events: { 'onReady': onPlayerReady, 'onError': onPlayerError },
         });
         console.log('Player reinitialized');
       }
@@ -582,6 +650,7 @@
 
       initializePlayer();
 
+      console.log('Video Restricted:', isRestricted, 'Token:', authToken); // Debug: Log restriction status
       if (isRestricted || !player) {
         watchNowButton.style.display = 'none';
       } else {

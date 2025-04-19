@@ -436,13 +436,13 @@
     const apiKey = 'AIzaSyAEAJf7QQGeo5brFq8yo9Ckiuds90WWrxc';
     const channelId = 'UC6OjVQRV7d2t1U4aJLvy7DA';
     const redirectUri = (() => {
-  const hostname = window.location.hostname;
-  if (hostname === '127.0.0.1' || hostname === 'localhost') {
-    return 'http://127.0.0.1:5500';
+    const hostname = window.location.hostname;
+    if (hostname === '127.0.0.1' || hostname === 'localhost') {
+      return 'http://127.0.0.1:5500';
   } else if (hostname === 'dodofordrive.github.io') {
-    return 'https://dodofordrive.github.io/myott/';
+      return 'https://dodofordrive.github.io/myott/';
   } else {
-    return 'https://taupe-tartufo-c7037e.netlify.app';
+      return 'https://taupe-tartufo-c7037e.netlify.app';
   }
 })();
     const maxResults = 100;

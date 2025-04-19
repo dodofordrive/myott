@@ -435,9 +435,16 @@
     const clientSecret = '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';
     const apiKey = 'AIzaSyAEAJf7QQGeo5brFq8yo9Ckiuds90WWrxc';
     const channelId = 'UC6OjVQRV7d2t1U4aJLvy7DA';
-    const redirectUri = window.location.hostname === '127.0.0.1' || window.location.hostname === 'localhost' 
-    ? 'http://127.0.0.1:5500' 
-    : 'https://taupe-tartufo-c7037e.netlify.app';
+    const redirectUri = (() => {
+  const hostname = window.location.hostname;
+  if (hostname === '127.0.0.1' || hostname === 'localhost') {
+    return 'http://127.0.0.1:5500';
+  } else if (hostname === 'dodofordrive.github.io') {
+    return 'https://dodofordrive.github.io/myott/';
+  } else {
+    return 'https://taupe-tartufo-c7037e.netlify.app';
+  }
+})();
     const maxResults = 100;
     const defaultThumbnail = 'https://via.placeholder.com/320x180?text=No+Thumbnail';
 
